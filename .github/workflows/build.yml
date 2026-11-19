@@ -1,0 +1,24 @@
+name: Build APK
+on:
+  push:
+  workflow_dispatch:
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fungua zip
+        run: |
+          mkdir work
+          unzip -q "$(ls *.zip | head -1)" -d work
+          cd "$(dirname "$(find work -name package.json -not -path '*/node_modules/*' | head -1)")"
+          echo "PROJ=$PWD" >> $GITHUB_ENV
+      - name: Jenga APK
+        run: |
+          docker build -f "$PROJ/Dockerfile.android" -t builder "$PROJ"
+          mkdir out
+          docker run --rm -v "$PWD/out:/out" builder
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chuini-sda-apk
+          path: out/chuini-sda.apk
